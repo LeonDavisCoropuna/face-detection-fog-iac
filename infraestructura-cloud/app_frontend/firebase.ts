@@ -9,7 +9,7 @@ import { CONFIG, isConfigLoaded } from './config';
 const app = initializeApp(CONFIG.firebase);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app, CONFIG.firebase.databaseId);
 export const storage = getStorage(app);
 export const isConfigured = isConfigLoaded();
 

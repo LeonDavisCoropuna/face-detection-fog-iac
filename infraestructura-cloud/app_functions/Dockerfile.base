@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 # Instalamos wheel y setuptools manualmente porque vamos a desactivar el aislamiento
 RUN pip install --upgrade pip setuptools wheel
 
+# CRÍTICO: Instalar numpy 1.x ANTES de dlib (dlib no es compatible con numpy 2.0+)
+RUN pip install numpy==1.25.1
+
 # 4. INSTALAR DLIB (LA SOLUCIÓN)
 # Agregamos --no-build-isolation.
 # Esto obliga a pip a usar el CMake v3.18 del sistema operativo y NO bajar la v4.2

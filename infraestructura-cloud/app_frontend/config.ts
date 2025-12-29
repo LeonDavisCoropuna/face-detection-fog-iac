@@ -7,13 +7,14 @@
 export const CONFIG = {
   // Configuración de Firebase (Consola de Firebase -> Project Settings)
   firebase: {
-    apiKey: "TU_API_KEY_AQUI",
-    authDomain: "tu-proyecto.firebaseapp.com",
-    projectId: "tu-proyecto-id",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdef1234567890",
-    measurementId: "G-XXXXXXXXXX" 
+    apiKey: "AIzaSyAI1ENgkHuktWO9NJKJDLqBBkmvS_6Sv04",
+    authDomain: "chat-pulimi.firebaseapp.com",
+    projectId: "chat-pulimi",
+    databaseId: "sentinel-db-8cc45e5",
+    storageBucket: "chat-pulimi.firebasestorage.app",
+    messagingSenderId: "107058197255",
+    appId: "1:107058197255:web:6f497dbbdeac59cfab0ba2",
+    measurementId: "G-2S2YRX2NBS"
   },
 
   // Buckets de Google Cloud Storage (Nombres exactos de tu Pulumi/GCP)

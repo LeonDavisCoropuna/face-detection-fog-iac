@@ -8,6 +8,8 @@ import cv2
 import json
 from datetime import datetime
 from google.cloud import pubsub_v1
+from PIL import Image
+import io
 
 # --- CONFIGURACIÓN ---
 BUCKET_EMPLEADOS_NAME = os.environ.get("BUCKET_EMPLEADOS")
@@ -40,16 +42,29 @@ def cargar_base_datos_desde_bucket():
 
     for blob in blobs:
         if blob.name.lower().endswith(('.jpg', '.png', '.jpeg')):
-            img_bytes = blob.download_as_bytes()
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            encodings = face_recognition.face_encodings(rgb_img)
+            try:
+                img_bytes = blob.download_as_bytes()
+                
+                # USAR PIL en lugar de cv2 para evitar problemas de formato
+                pil_img = Image.open(io.BytesIO(img_bytes))
+                
+                # Convertir a RGB (elimina canal alpha si existe)
+                if pil_img.mode != 'RGB':
+                    pil_img = pil_img.convert('RGB')
+                
+                # Convertir a numpy array (ya está en RGB)
+                rgb_img = np.array(pil_img, dtype=np.uint8)
+
+                encodings = face_recognition.face_encodings(rgb_img)
+                
+                if len(encodings) > 0:
+                    known_face_encodings.append(encodings[0])
+                    name = os.path.splitext(os.path.basename(blob.name))[0]
+                    known_face_names.append(name)
             
-            if len(encodings) > 0:
-                known_face_encodings.append(encodings[0])
-                name = os.path.splitext(os.path.basename(blob.name))[0]
-                known_face_names.append(name)
+            except Exception as e:
+                print(f"❌ ERROR FATAL leyendo {blob.name}: {str(e)}")
+                continue
     
     base_datos_cargada = True
     print(f"--- DB Lista: {len(known_face_names)} personas ---")
@@ -76,9 +91,18 @@ def analizar_intruso(cloud_event):
     blob_full = bucket_incoming.blob(file_name)
     
     img_bytes_full = blob_full.download_as_bytes()
-    nparr_full = np.frombuffer(img_bytes_full, np.uint8)
-    img_full = cv2.imdecode(nparr_full, cv2.IMREAD_COLOR)
-    rgb_full = cv2.cvtColor(img_full, cv2.COLOR_BGR2RGB)
+    
+    # USAR PIL en lugar de cv2 para compatibilidad total con face_recognition
+    pil_img_full = Image.open(io.BytesIO(img_bytes_full))
+    
+    # Convertir a RGB (elimina canal alpha si existe)
+    if pil_img_full.mode != 'RGB':
+        pil_img_full = pil_img_full.convert('RGB')
+    
+    # Convertir a numpy array (ya en RGB, formato correcto)
+    rgb_full = np.array(pil_img_full, dtype=np.uint8)
+    
+    print(f"🔬 DEBUG - Shape: {rgb_full.shape}, Dtype: {rgb_full.dtype}")
 
     # --- 3. Analizar Rostros ---
     print("🔍 Buscando rostros en la escena completa...")
@@ -101,8 +125,11 @@ def analizar_intruso(cloud_event):
     for idx, (unknown_encoding, face_location) in enumerate(zip(unknown_encodings, face_locations)):
         top, right, bottom, left = face_location
         
-        # Recorte
-        face_image = img_full[top:bottom, left:right]
+        # Recorte del rostro (rgb_full está en RGB)
+        face_image_rgb = rgb_full[top:bottom, left:right]
+        
+        # Convertir a BGR para guardar con cv2
+        face_image_bgr = cv2.cvtColor(face_image_rgb, cv2.COLOR_RGB2BGR)
         
         # NOMBRE SEGURO PARA EL RECORTE (Usamos _CROP para no activar triggers por error)
         # file_name original: evidencia_2025..._FULL.jpg
@@ -110,7 +137,7 @@ def analizar_intruso(cloud_event):
         crop_filename = f"{base_name}_CROP_{idx + 1}.jpg"
         
         # Subir recorte
-        _, face_buffer = cv2.imencode('.jpg', face_image)
+        _, face_buffer = cv2.imencode('.jpg', face_image_bgr)
         bucket_incoming.blob(crop_filename).upload_from_string(face_buffer.tobytes(), content_type='image/jpeg')
         recortes_nombres.append(crop_filename)
         
