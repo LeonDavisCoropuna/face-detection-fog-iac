@@ -10,7 +10,7 @@ from antispoof_detector import AntiSpoofDetector
 # ==========================================
 # ⚙️ CONFIGURACIÓN
 # ==========================================
-VIDEO_PATH = 'prueba2.mp4'  # Ruta del video o número de cámara (0 para webcam)
+VIDEO_PATH = 'http://192.168.0.16:8080/video'
 BUCKET_NAME = "sentinel-incoming-images-8cb8e26"
 MODEL_ANTISPOOF = "MiniFASNetV2_fixed.onnx"  # Archivo del modelo (descargar y colocar en la carpeta)
 

@@ -50,33 +50,50 @@ class AntiSpoofDetector:
 
         face_roi = frame[new_y:new_y+new_h, new_x:new_x+new_w]
 
-        # 2. Preprocesamiento manual (OpenCV DNN lo hacía automático, aquí no)
         try:
-            # Resize al tamaño que pide el modelo (80x80)
+            # A) BGR a RGB
+            face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
+
+            # B) Resize (80x80)
             resized = cv2.resize(face_roi, (self.img_w, self.img_h))
             
-            # Convertir a float32 y normalizar a [0, 1]
+            # C) NORMALIZACIÓN IMAGENET (CRÍTICO)
+            # El modelo fue entrenado restando estos promedios. 
+            # Si no lo haces, los valores se disparan o se congelan.
             img_data = resized.astype(np.float32) / 255.0
+            mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+            std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+            img_data = (img_data - mean) / std
             
-            # Transponer de (Alto, Ancho, Canales) a (Canales, Alto, Ancho) -> Formato PyTorch/ONNX
+            # D) Transponer y Batch
             img_data = np.transpose(img_data, (2, 0, 1))
-            
-            # Agregar dimensión de batch: (1, 3, 80, 80)
             img_data = np.expand_dims(img_data, axis=0)
 
-            # 3. Inferencia
+            # E) Inferencia
             inputs = {self.input_name: img_data}
-            preds = self.session.run(None, inputs)[0] # Retorna lista, tomamos el primero
+            preds = self.session.run(None, inputs)[0]
             
-            # 4. Softmax
+            # F) Softmax
             preds = np.array(preds).flatten()
             probs = np.exp(preds) / np.sum(np.exp(preds))
             
-            # INDICE: En MiniFASNet, usualmente [0]=Spoof, [1]=Real
-            # Verificar esto probando. Si sale invertido, cambia a probs[0]
-            score_real = probs[1] 
+            # --- MAPEO DE CLASES BASADO EN TUS LOGS ---
+            # Tus logs mostraron: [Bajo, Bajo, 0.99] para cara real.
+            # Por tanto: Index 2 es REAL.
             
-            label = "REAL" if score_real > 0.70 else "FAKE"
+            if len(probs) == 3:
+                score_spoof_1 = probs[0] # Probablemente Foto Impresa
+                score_spoof_2 = probs[1] # Probablemente Pantalla/Video
+                score_real    = probs[2] # CARA REAL
+                
+                # Debug en consola para verificar (opcional)
+                # print(f"📊 Probabilidades: Foto={probs[0]:.2f}, Video={probs[1]:.2f}, REAL={probs[2]:.2f}")
+            else:
+                # Fallback si el modelo fuera binario
+                score_real = probs[-1] # Asumimos el último es real
+
+            # Umbral de decisión (0.40 es suficiente para producción)
+            label = "REAL" if score_real > 0.40 else "FAKE"
             return score_real, label
             
         except Exception as e:
