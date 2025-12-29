@@ -1,0 +1,7 @@
+google-cloud-storage
+google-cloud-firestore
+face_recognition
+numpy
+opencv-python-headless
+functions-framework
+google-cloud-pubsub

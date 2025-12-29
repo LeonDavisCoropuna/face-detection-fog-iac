@@ -1,0 +1,5 @@
+config:
+  gcp:region: us-central1
+  gcp:project: chat-pulimi
+  gcp:zone: us-central1
+encryptionsalt: v1:fCKTspgYido=:v1:016OQRKjOYnAvmYO:Kcv7k0YMhFLT9VtanqvUu4S/KRIREg==

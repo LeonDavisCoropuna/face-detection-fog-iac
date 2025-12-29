@@ -1,0 +1,14 @@
+{
+    "name": "face-detection",
+    "main": "index.ts",
+    "devDependencies": {
+        "@types/node": "^18.19.130",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@pulumi/gcp": "^9.7.0",
+        "@pulumi/pulumi": "^3.213.0",
+        "dotenv": "^16.4.5",
+        "mime": "^4.1.0"
+    }
+}

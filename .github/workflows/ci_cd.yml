@@ -1,0 +1,63 @@
+name: Deploy Sentinel System
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: chat-pulimi
+  REGION: us-central1
+  REPO_NAME: sentinel-repo
+  IMAGE_NAME: sentinel-analyst
+  WORKING_DIR: ./infraestructura-cloud
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 1. CONSTRUIR IMAGEN CON TAG ÚNICO (SHA DEL COMMIT)
+      # Usamos ${{ github.sha }} para que la imagen sea única por cada cambio de código
+      - name: Build and Push Docker Image
+        run: |
+          gcloud builds submit \
+            --tag $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:${{ github.sha }} \
+            $WORKING_DIR/app_functions
+
+      - name: Install Pulumi Dependencies
+        working-directory: ${{ env.WORKING_DIR }}
+        run: npm install
+
+      # 2. DESPLEGAR CON PULUMI PASANDO EL TAG
+      - name: Pulumi Up
+        uses: pulumi/actions@v5
+        with:
+          command: up
+          stack-name: dev
+          work-dir: ${{ env.WORKING_DIR }}
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          # Aquí pasamos el SHA para que index.ts lo capture en process.env.IMAGE_TAG
+          IMAGE_TAG: ${{ github.sha }}
+          # Variables de entorno secretas
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
