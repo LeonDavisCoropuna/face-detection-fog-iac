@@ -10,7 +10,7 @@ const location = "us-central1"; // Unificamos la región
 
 // Configuración de secretos
 const config = new pulumi.Config();
-const gmailPassword = config.requireSecret("gmailPassword"); // <--- Secreto encriptado
+const gmailPassword = process.env.GMAIL_PASSWORD || config.requireSecret("gmailPassword");
 
 // 1. BUCKET DE IMÁGENES (Donde llegan las fotos del Fog Node)
 const bucketImagenes = new gcp.storage.Bucket("sentinel-incoming-images", {
