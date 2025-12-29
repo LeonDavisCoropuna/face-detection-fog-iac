@@ -11,13 +11,13 @@ from antispoof_detector import AntiSpoofDetector
 # ⚙️ CONFIGURACIÓN
 # ==========================================
 VIDEO_PATH = 'http://192.168.0.16:8080/video'
-BUCKET_NAME = "sentinel-incoming-images-8cb8e26"
-MODEL_ANTISPOOF = "MiniFASNetV2_fixed.onnx"  # Archivo del modelo (descargar y colocar en la carpeta)
+BUCKET_NAME = "sentinel-incoming-images-884108c"
+MODEL_ANTISPOOF = "final_resnet18_custom.pth"  # Modelo PyTorch entrenado
 
 VAR_THRESHOLD = 100
 AREA_MINIMA = 4000
 CONFIDENCIA_YOLO = 0.50
-UMBRAL_REALIDAD = 0.70      # Si es menor a 70% real, es fraude
+UMBRAL_REALIDAD = 0.50      # Si es menor a 50% real, es fraude (ajustar según resultados)
 TIEMPO_RECOLECCION = 4.0    # Segundos que espera para buscar la mejor foto
 TIEMPO_COOLDOWN = 5.0       # Segundos de descanso tras una detección
 
@@ -65,7 +65,8 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 fgbg = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=VAR_THRESHOLD, detectShadows=True)  # Detecta movimiento
 
 # --- INICIALIZAR ANTI-SPOOFING ---
-detector_fraude = AntiSpoofDetector(MODEL_ANTISPOOF)
+# DEBUG_MODE = True guardará imágenes para análisis en carpeta debug_antispoof/
+detector_fraude = AntiSpoofDetector(MODEL_ANTISPOOF, debug_mode=False)
 
 cap = cv2.VideoCapture(VIDEO_PATH)
 
