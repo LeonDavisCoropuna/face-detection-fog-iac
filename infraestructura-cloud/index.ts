@@ -3,9 +3,14 @@ import * as gcp from "@pulumi/gcp";
 import * as fs from "fs";   // <--- Para leer archivos
 import * as path from "path"; // <--- Para manejar rutas de carpetas
 import "dotenv/config"; // <--- Para leer variables de entorno desde .env
-const config = new pulumi.Config("gcp");
-const project = config.require("project");
+
+const gcpConfig = new pulumi.Config("gcp");
+const project = gcpConfig.require("project");
 const location = "us-central1"; // Unificamos la región
+
+// Configuración de secretos
+const config = new pulumi.Config();
+const gmailPassword = config.requireSecret("gmailPassword"); // <--- Secreto encriptado
 
 // 1. BUCKET DE IMÁGENES (Donde llegan las fotos del Fog Node)
 const bucketImagenes = new gcp.storage.Bucket("sentinel-incoming-images", {
@@ -199,7 +204,7 @@ const functionNotifier = new gcp.cloudfunctionsv2.Function("sentinel-notifier", 
     serviceAccountEmail: triggerServiceAccount.email,
     environmentVariables: {
       "GMAIL_USER": "leonfelipe201611@gmail.com",
-      "GMAIL_PASSWORD": process.env.GMAIL_PASSWORD || "ERROR_NO_PASSWORD", // <--- Lee del entorno de GitHub
+      "GMAIL_PASSWORD": gmailPassword, // <--- Pulumi maneja la desencriptación automáticamente
       "GMAIL_DESTINATARIO": "ldavis@unsa.edu.pe",
     }
   },

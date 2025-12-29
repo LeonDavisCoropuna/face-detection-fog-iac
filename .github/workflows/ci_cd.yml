@@ -48,6 +48,14 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: npm install
 
+      # Configurar secretos en Pulumi antes de desplegar
+      - name: Set Pulumi Secrets
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          pulumi config set --secret gmailPassword "${{ secrets.GMAIL_PASSWORD }}" --stack dev
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
       # 2. DESPLEGAR CON PULUMI PASANDO EL TAG
       - name: Pulumi Up
         uses: pulumi/actions@v5
@@ -59,5 +67,3 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           # Aquí pasamos el SHA para que index.ts lo capture en process.env.IMAGE_TAG
           IMAGE_TAG: ${{ github.sha }}
-          # Variables de entorno secretas
-          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
