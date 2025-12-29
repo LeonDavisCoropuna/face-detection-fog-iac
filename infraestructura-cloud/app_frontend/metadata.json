@@ -1,0 +1,7 @@
+{
+  "name": "Security Sentinel Dashboard",
+  "description": "Professional security monitoring and employee management dashboard with real-time Firebase integration.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
